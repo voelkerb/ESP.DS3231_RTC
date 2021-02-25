@@ -1,0 +1,20 @@
+{
+	"name": "DS3231_RTC",
+	"version": "0.0.9",
+	"keywords": "timing, rtc",
+	"description": "Wrapper around Adafruit RTCLib to get time strings and allow callback functions to be passed for interrupts",
+	"authors":
+	[
+		{
+		"name": "Benjamin Voelker",
+		"email": "voelkerb@me.com",
+		"url": "http://github.com/voelkerb/ESP.DS3231_RTC"
+		}
+	],
+	"repository":
+	{
+		"type": "git",
+		"url": "http://github.com/voelkerb/ESP.DS3231_RTC.git"
+	},
+	"frameworks": "arduino"
+}
