@@ -22,11 +22,7 @@ static void _DS3231_Interrupt_ISR() {
 }
 #endif
 
-#ifdef LOGGER_h
-Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl) :_SDA(sda), _SCL(scl), logger(MultiLogger::getInstance()) {
-#else
-Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl) :_SDA(sda), _SCL(scl) {
-#endif
+Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl, MultiLogger * logger) :_SDA(sda), _SCL(scl) {
   INT_PIN = intPin;
   _intCB = NULL;
   lost = true;
@@ -36,6 +32,8 @@ Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl) :_SDA(sda), _SCL(scl) {
 #endif
   _lastRequest = 0;
   _now = DateTime(0);
+
+  this->logger = logger;  
 }
 
 
@@ -57,14 +55,10 @@ bool Rtc::init() {
 #endif
   // Read temperature to see a DS3231 is connected
   float temp = _rtc.getTemperature();
-#ifdef LOGGER_h
-  logger.log("Temp: %.2f", temp);
-#endif
+  if (logger != NULL) logger->log("Temp: %.2f", temp);
   // If temperature is beyond normal, consider RTC to be not present
   if (temp < 1 || temp > 70) {
-#ifdef LOGGER_h
-    logger.log("No RTC connected");
-#endif
+    if (logger != NULL) logger->log("No RTC connected");
     connected = false;
     return false;
   } else {
@@ -99,9 +93,7 @@ void Rtc::setTime(DateTime dt) {
 
 bool Rtc::enableInterrupt(int frequency, void (*cb)(void)) {
   if (INT_PIN == -1) {
-#ifdef LOGGER_h
-    logger.log("Need to init RTC with Pin to which RTC SQW out is connected");
-#endif
+    if (logger != NULL) logger->log("Need to init RTC with Pin to which RTC SQW out is connected");
     return false;
   }
   bool success = enableRTCSqwv(frequency);
@@ -139,9 +131,7 @@ bool Rtc::enableRTCSqwv(int frequency) {
   } else if (frequency == 8192) {
     _rtc.writeSqwPinMode(DS3231_SquareWave8kHz);
   } else {
-#ifdef LOGGER_h
-    logger.log("Unsupported RTC SQWV frequency");
-#endif
+    if (logger != NULL) logger->log("Unsupported RTC SQWV frequency");
     return false;
   }
   // TODO: Frequency calculation and so on...

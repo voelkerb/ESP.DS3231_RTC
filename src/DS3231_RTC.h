@@ -20,10 +20,11 @@
 #else
 #include "WProgram.h"
 #endif
+#include "multiLogger.h"
 
 class Rtc {
   public:
-    Rtc(int8_t intPin, int8_t sda = -1, int8_t scl = -1);
+    Rtc(int8_t intPin, int8_t sda = -1, int8_t scl = -1, MultiLogger * logger=NULL);
     bool init();
     DateTime update();
     bool enableInterrupt(int frequency, void (*cb)(void));
@@ -51,9 +52,7 @@ class Rtc {
 
     unsigned long _lastRequest;
 
-#ifdef LOGGER_h
-    MultiLogger &logger;
-#endif
+    MultiLogger *logger;
 
     void (*_intCB)(void);
 };

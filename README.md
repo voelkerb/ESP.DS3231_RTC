@@ -4,8 +4,6 @@ Allows to pass callback function for SQWV Pin interrupts and provides convenient
 
 Requirements:
 - Adafruit [RTClib](https://adafruit.github.io/RTClib/html/index.html)
-
-Supports:
 - [multiLogger](http://github.com/voelkerb/ESP.multiLogger)
 
 ```C++
