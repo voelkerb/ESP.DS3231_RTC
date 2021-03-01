@@ -13,12 +13,11 @@
 
 RTC_DS3231 _rtc;
 #if defined(ESP32)
-TaskHandle_t xHandle = NULL;
-xQueueHandle xQueue = xQueueCreate(100, sizeof(bool));
+xQueueHandle DS3231_xQueue = xQueueCreate(100, sizeof(bool));
 static void _DS3231_Interrupt_ISR() {
   bool success = false;
   BaseType_t xHigherPriorityTaskWoken;
-  BaseType_t xStatus = xQueueSendToBackFromISR( xQueue, &success, &xHigherPriorityTaskWoken );
+  BaseType_t xStatus = xQueueSendToBackFromISR( DS3231_xQueue, &success, &xHigherPriorityTaskWoken );
 }
 #endif
 
@@ -173,7 +172,7 @@ char * Rtc::timeStr(DateTime dt) {
 void Rtc::_DS3231_Interrupt(void * pvParameters) {
   bool success = false;
   while(true) {
-    BaseType_t xStatus = xQueueReceive( xQueue, &success, portMAX_DELAY);
+    BaseType_t xStatus = xQueueReceive( DS3231_xQueue, &success, portMAX_DELAY);
     if(xStatus == pdPASS) {
       if (xPortGetCoreID() != 0 && ((Rtc*)pvParameters)->connected) {
         if (((Rtc*)pvParameters)->_intCB != NULL) ((Rtc*)pvParameters)->_intCB();
