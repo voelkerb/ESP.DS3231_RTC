@@ -13,16 +13,15 @@
 
 RTC_DS3231 _rtc;
 #if defined(ESP32)
-TaskHandle_t xHandle = NULL;
-xQueueHandle xQueue = xQueueCreate(100, sizeof(bool));
+xQueueHandle DS3231_xQueue = xQueueCreate(100, sizeof(bool));
 static void _DS3231_Interrupt_ISR() {
   bool success = false;
   BaseType_t xHigherPriorityTaskWoken;
-  BaseType_t xStatus = xQueueSendToBackFromISR( xQueue, &success, &xHigherPriorityTaskWoken );
+  BaseType_t xStatus = xQueueSendToBackFromISR( DS3231_xQueue, &success, &xHigherPriorityTaskWoken );
 }
 #endif
 
-Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl, MultiLogger * logger) :_SDA(sda), _SCL(scl) {
+Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl) :_SDA(sda), _SCL(scl) {
   INT_PIN = intPin;
   _intCB = NULL;
   lost = true;
@@ -32,8 +31,6 @@ Rtc::Rtc(int8_t intPin, int8_t sda, int8_t scl, MultiLogger * logger) :_SDA(sda)
 #endif
   _lastRequest = 0;
   _now = DateTime(0);
-
-  this->logger = logger;  
 }
 
 
@@ -55,10 +52,14 @@ bool Rtc::init() {
 #endif
   // Read temperature to see a DS3231 is connected
   float temp = _rtc.getTemperature();
-  if (logger != NULL) logger->log("Temp: %.2f", temp);
+#ifdef DEBUG_RTC
+  Serial.printf("Temp: %.2f\n", temp);
+#endif
   // If temperature is beyond normal, consider RTC to be not present
   if (temp < 1 || temp > 70) {
-    if (logger != NULL) logger->log("No RTC connected");
+  #ifdef DEBUG_RTC
+    Serial.printf("No RTC connected\n");
+  #endif
     connected = false;
     return false;
   } else {
@@ -93,7 +94,9 @@ void Rtc::setTime(DateTime dt) {
 
 bool Rtc::enableInterrupt(int frequency, void (*cb)(void)) {
   if (INT_PIN == -1) {
-    if (logger != NULL) logger->log("Need to init RTC with Pin to which RTC SQW out is connected");
+#ifdef DEBUG_RTC
+    Serial.println("Need to init RTC with Pin to which RTC SQW out is connected");
+#endif
     return false;
   }
   bool success = enableRTCSqwv(frequency);
@@ -131,7 +134,9 @@ bool Rtc::enableRTCSqwv(int frequency) {
   } else if (frequency == 8192) {
     _rtc.writeSqwPinMode(DS3231_SquareWave8kHz);
   } else {
-    if (logger != NULL) logger->log("Unsupported RTC SQWV frequency");
+#ifdef DEBUG_RTC
+    Serial.println("Unsupported RTC SQWV frequency");
+#endif
     return false;
   }
   // TODO: Frequency calculation and so on...
@@ -173,7 +178,7 @@ char * Rtc::timeStr(DateTime dt) {
 void Rtc::_DS3231_Interrupt(void * pvParameters) {
   bool success = false;
   while(true) {
-    BaseType_t xStatus = xQueueReceive( xQueue, &success, portMAX_DELAY);
+    BaseType_t xStatus = xQueueReceive( DS3231_xQueue, &success, portMAX_DELAY);
     if(xStatus == pdPASS) {
       if (xPortGetCoreID() != 0 && ((Rtc*)pvParameters)->connected) {
         if (((Rtc*)pvParameters)->_intCB != NULL) ((Rtc*)pvParameters)->_intCB();
