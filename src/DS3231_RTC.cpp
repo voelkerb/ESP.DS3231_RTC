@@ -17,7 +17,7 @@ xQueueHandle DS3231_xQueue = xQueueCreate(100, sizeof(bool));
 static void _DS3231_Interrupt_ISR() {
   bool success = false;
   BaseType_t xHigherPriorityTaskWoken;
-  BaseType_t xStatus = xQueueSendToBackFromISR( DS3231_xQueue, &success, &xHigherPriorityTaskWoken );
+  xQueueSendToBackFromISR( DS3231_xQueue, &success, &xHigherPriorityTaskWoken );
 }
 #endif
 
