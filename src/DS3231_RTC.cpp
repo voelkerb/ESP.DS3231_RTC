@@ -16,8 +16,9 @@ RTC_DS3231 _rtc;
 xQueueHandle DS3231_xQueue = xQueueCreate(100, sizeof(bool));
 static void _DS3231_Interrupt_ISR() {
   bool success = false;
-  BaseType_t xHigherPriorityTaskWoken;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xQueueSendToBackFromISR( DS3231_xQueue, &success, &xHigherPriorityTaskWoken );
+  if (xHigherPriorityTaskWoken) portYIELD_FROM_ISR();
 }
 #endif
 
@@ -124,6 +125,10 @@ bool Rtc::enableInterrupt(int frequency, void (*cb)(void)) {
 
 bool Rtc::enableRTCSqwv(int frequency) {
   // TODO: does this reset the sqwc counter?
+  // Re-adjusting with a stale _now would set the RTC back in time
+  if (!connected) return false;
+  _now = _rtc.now();
+  _lastRequest = millis();
   _rtc.adjust(_now);
   if (frequency == 1) {
     _rtc.writeSqwPinMode(DS3231_SquareWave1Hz);
